@@ -1,0 +1,96 @@
+http://inchoo.net/magento-2/how-to-create-a-basic-module-in-magento-2/
+
+How to create a basic module in Magento 2
+Needless to say, you will need the latest Magento 2 version which is currently 2.1. If you need any help with the Magento 2 installation we have a great article regarding this particular topic “How to install Magento 2”.
+Before we start a Magento 2 module development, there are two things people often forget and we recommend you to do:
+
+1. Disable Magento cache
+
+Disabling Magento cache during development will save you some time because you won’t need to manually flush the cache every time you make changes to your code.
+The easiest way to disable cache is to go to Admin ? System ? Cache Management ? select all cache types and disable them.
+
+2. Put Magento into a developer mode                                                                                                                           run the following command:                                                                                                                                             php bin/magento deploy:mode:set developer
+Creating the module files and folders
+Module setup                                                                                                                                                                             In Magento 2, there are no more code pools. Modules are grouped by namespace and placed directly in the app/code folder.
+So our first step is to create the module folder and necessary files required to register a Magento module.                                                                                                                                                                                1. Create the following folders:                                                                                                                    app/code/Inchoo                                                                                                                       app/code/Inchoo/Helloworld
+The Inchoo folder is the module’s namespace, and Helloworld is the module’s name.                                               Note: If you don’t have the code folder in your app directory, create it manually.
+2. Now that we have a module folder, we need to create a module.xml file in the app/code/Inchoo/Helloworld/etc folder with the following code:
+<?xml version="1.0"?>                                                                                                                                                <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:Module/etc/module.xsd">    <module name="Inchoo_Helloworld" setup_version="1.0.0">                                                   </module>                                                                                                                                                                  </config>
+3. To register the module, create a registration.php                                                                                                                                   file in the app/code/Inchoo/Helloworld folder with the following code:                                                          <?php 
+\Magento\Framework\Component\ComponentRegistrar::register(                                            \Magento\Framework\Component\ComponentRegistrar::MODULE,                                             'Inchoo_Helloworld',                                                                                                                                                 __DIR__                                                                                                                                                                                       );
+4. Open your terminal and go to the Magento 2 root. Run from there the following command:
+
+php bin/magento setup:upgrade
+If you want to make sure that the module is installed, you can go to Admin ? Stores ? Configuration ? Advanced ? Advanced and check that the module is present in the list or you can open app/etc/config.php and check the array for the ‘Inchoo_Helloworld’ key, whose value should be set to 1.
+
+Creating a controller
+1. First we need to define the router. To do this, create a routes.xml file in the 
+app/code/Inchoo/Helloworld/etc/frontend folder with the following code:
+
+<?xml version="1.0"?> 
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:App/etc/routes.xsd">
+    <router id="standard">
+        <route id="helloworld" frontName="helloworld">
+            <module name="Inchoo_Helloworld" />
+        </route>
+    </router>
+</config>
+Here we’re defining our frontend router and route with an id “helloworld”.
+The frontName attribute is going to be the first part of our URL.
+In Magento 2 URL’s are constructed this way:
+<frontName>/<controler_folder_name>/<controller_class_name>
+
+So in our example, the final URL will look like this:
+helloworld/index/index
+
+2. Now we create the Index.php controller file in the app/code/Inchoo/Helloworld/Controller/Index folder with the following code:
+
+<?php
+ 
+namespace Inchoo\Helloworld\Controller\Index;
+ 
+use Magento\Framework\App\Action\Context;
+ 
+class Index extends \Magento\Framework\App\Action\Action
+{
+    protected $_resultPageFactory;
+ 
+    public function __construct(Context $context, \Magento\Framework\View\Result\PageFactory $resultPageFactory)
+    {
+        $this->_resultPageFactory = $resultPageFactory;
+        parent::__construct($context);
+    }
+ 
+    public function execute()
+    {
+        $resultPage = $this->_resultPageFactory->create();
+        return $resultPage;
+    }
+}
+In Magento 1 each controller can have multiple actions, but in Magento 2 this is not the case. In Magento 2 every action has its own class which implements the execute() method.
+
+Creating a block
+
+We’ll create a simple block class with the getHelloWorldTxt() method which returns the “Hello world” string.
+1. Create a Helloworld.php file in the app/code/Inchoo/Helloworld/Block folder with the following code:
+
+<?php   namespace Inchoo\Helloworld\Block;
+class Helloworld extends \Magento\Framework\View\Element\Template  {
+    public function getHelloWorldTxt()    {
+        return 'Hello world!';
+    }
+}
+Creating a layout and template files
+
+In Magento 2, layout files and templates are placed in the view folder inside your module. Inside the view folder, we can have three subfolders: adminhtml, base and frontend.
+The adminhtml folder is used for admin, the frontend folder is used for frontend and the base folder is used for both, admin and frontend files.
+1. First we will create a helloworld_index_index.xml file in the app/code/Inchoo/Helloworld/view/frontend/layout 
+folder with the following code:
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../../../../../lib/internal/Magento/Framework/View/Layout/etc/page_configuration.xsd" layout="1column">
+    <body>                                                                                                                                                      <referenceContainer name="content">                                                                                                     <block class="Inchoo\Helloworld\Block\Helloworld" name="helloworld" template="helloworld.phtml" />                                                                                                    </referenceContainer>                                                                                                                                        </body>
+</page>
+Every page has a layout hand and for our controller action the layout handle is helloworld_index_index. 
+You can create a layout configuration file for every layout handle. In our layout file we have added a block to the content container and set the template  of our block to helloworld.phtml, which we will create in the next step.
+2. Create a helloworld.phtml file in the app/code/Inchoo/Helloworld/view/frontend/templates folder with 
+the following code:                                                                                                                                                                              <h1><?php echo $this->getHelloWorldTxt(); ?></h1>
+$this variable is refrencing our block class and we are calling the method getHelloWorldTxt() which is returning the string ‘Hello world!’.                                                                                                                And that’s it. Open the /helloworld/index/index URL in your browser 
